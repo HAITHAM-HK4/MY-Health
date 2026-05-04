@@ -1,3 +1,4 @@
+import { storage } from '../lib/storage';
 import { useState, useEffect } from 'react';
 
 const allSymptoms = [
@@ -20,7 +21,7 @@ export default function SymptomsList() {
   const [selected, setSelected] = useState<number[]>([]);
 
   useEffect(() => {
-    const saved = localStorage.getItem(key);
+    const saved = storage.get(key);
     if (saved) setSelected(JSON.parse(saved));
   }, []);
 
@@ -29,7 +30,7 @@ export default function SymptomsList() {
       ? selected.filter(s => s !== id)
       : [...selected, id];
     setSelected(updated);
-    localStorage.setItem(key, JSON.stringify(updated));
+    storage.set(key, JSON.stringify(updated));
   };
 
   const selectedSymptoms = allSymptoms.filter(s => selected.includes(s.id));

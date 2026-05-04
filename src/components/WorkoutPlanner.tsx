@@ -3,6 +3,36 @@ import { useState } from 'react';
 const levels = ['مبتدئ', 'متوسط', 'متقدم'];
 const goals  = ['صحة عامة', 'خسارة وزن', 'بناء عضلات', 'مرونة'];
 
+const GROQ_KEY = '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';
+
+const callAI = async (prompt: string): Promise<string> => {
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${GROQ_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        {
+          role: 'system',
+          content: 'أنت مدرب لياقة بدنية محترف ومتخصص باللغة العربية. ردودك واضحة ومنظمة وعملية. استخدم إيموجي باعتدال. قدم خططاً آمنة ومناسبة.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      max_tokens: 1000,
+    }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data?.error?.message || 'خطأ غير معروف');
+  return data.choices[0].message.content;
+};
+
 export default function WorkoutPlanner() {
   const [level, setLevel] = useState('مبتدئ');
   const [goal, setGoal]   = useState('صحة عامة');
@@ -13,24 +43,14 @@ export default function WorkoutPlanner() {
     setLoading(true);
     setResult('');
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.REACT_APP_GEMINI_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: `خطة تمرين يومية بالعربية - المستوى: ${level}، الهدف: ${goal}
-                بدون معدات (في البيت). تشمل: إحماء، تمارين رئيسية، تبريد.`
-              }]
-            }],
-          }),
-        }
-      );
-      const data = await response.json();
-      setResult(data.candidates[0].content.parts[0].text);
-    } catch { setResult('حدث خطأ، حاول مرة ثانية'); }
+      const prompt = `خطة تمرين يومية بالعربية - المستوى: ${level}، الهدف: ${goal}
+      بدون معدات (في البيت). تشمل: إحماء، تمارين رئيسية، تبريد.`;
+      const text = await callAI(prompt);
+      setResult(text);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      setResult(`⚠️ تعذّر الاتصال: ${errorMsg}\nتحقق من اتصالك وحاول مجدداً.`);
+    }
     setLoading(false);
   };
 

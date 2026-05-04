@@ -2,6 +2,36 @@ import { useState } from 'react';
 
 const goals = ['صحة عامة', 'خسارة وزن', 'بناء عضلات', 'السكري', 'ضغط الدم'];
 
+const GROQ_KEY = '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';
+
+const callAI = async (prompt: string): Promise<string> => {
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${GROQ_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        {
+          role: 'system',
+          content: 'أنت أخصائي تغذية محترف ومتخصص باللغة العربية. ردودك واضحة ومنظمة وعملية. اقترح وجبات بسيطة ومتاحة ومناسبة للهدف الصحي.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      max_tokens: 1000,
+    }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data?.error?.message || 'خطأ غير معروف');
+  return data.choices[0].message.content;
+};
+
 export default function MealPlanner() {
   const [goal, setGoal] = useState('صحة عامة');
   const [result, setResult] = useState('');
@@ -11,24 +41,14 @@ export default function MealPlanner() {
     setLoading(true);
     setResult('');
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.REACT_APP_GEMINI_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: `اقترح خطة وجبات يومية بالعربية لهدف: ${goal}
-                تشمل: الفطور، الغداء، العشاء، وسناك صحي. اجعلها بسيطة ومتاحة.`
-              }]
-            }],
-          }),
-        }
-      );
-      const data = await response.json();
-      setResult(data.candidates[0].content.parts[0].text);
-    } catch { setResult('حدث خطأ، حاول مرة ثانية'); }
+      const prompt = `اقترح خطة وجبات يومية بالعربية لهدف: ${goal}
+      تشمل: الفطور، الغداء، العشاء، وسناك صحي. اجعلها بسيطة ومتاحة.`;
+      const text = await callAI(prompt);
+      setResult(text);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      setResult(`⚠️ تعذّر الاتصال: ${errorMsg}\nتحقق من اتصالك وحاول مجدداً.`);
+    }
     setLoading(false);
   };
 

@@ -1,5 +1,8 @@
 import { useState } from 'react';
 
+// استخدمنا نفس المفتاح والـ API الخاص بالمحادثة لضمان العمل
+const GROQ_KEY = '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';
+
 const symptoms = [
   '🤕 صداع', '🌡️ حمى', '🤢 غثيان', '💫 دوخة',
   '😮‍💨 ضيق تنفس', '🤧 رشح', '😴 إرهاق', '🫀 خفقان',
@@ -18,29 +21,42 @@ export default function SymptomAnalyzer() {
     if (selected.length === 0) return alert('اختر أعراضاً أولاً');
     setLoading(true);
     setResult('');
+    
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.REACT_APP_GEMINI_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: `المريض يعاني من: ${selected.join('، ')}.
-                قدم تحليلاً باللغة العربية يشمل:
-                1. الأسباب المحتملة
-                2. التوصيات العامة
-                3. متى يجب زيارة الطبيب
-                كن مختصراً وواضحاً.`
-              }]
-            }],
-          }),
-        }
-      );
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${GROQ_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            {
+              role: 'system',
+              content: 'أنت مساعد طبي ذكي. قدم تحليلاً مبدئياً مبنياً على الأعراض، ودائماً انصح باستشارة طبيب للحالات المؤكدة.'
+            },
+            {
+              role: 'user',
+              content: `المريض يعاني من هذه الأعراض: ${selected.join('، ')}.
+              قدم تحليلاً باللغة العربية يشمل:
+              1. الأسباب المحتملة
+              2. التوصيات العامة المنزلية
+              3. متى يجب زيارة الطبيب فوراً
+              كن مختصراً وواضحاً ومرتباً في نقاط.`
+            }
+          ],
+          max_tokens: 1000,
+        }),
+      });
+
       const data = await response.json();
-      setResult(data.candidates[0].content.parts[0].text);
-    } catch { setResult('حدث خطأ، حاول مرة ثانية'); }
+      if (!response.ok) throw new Error(data?.error?.message || 'خطأ غير معروف');
+      setResult(data.choices[0].message.content);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      setResult(`⚠️ تعذّر الاتصال: ${errorMsg}\nتحقق من اتصالك وحاول مجدداً.`);
+    }
     setLoading(false);
   };
 

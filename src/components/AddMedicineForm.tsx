@@ -20,39 +20,40 @@ export default function AddMedicineForm({ onAdd }: Props) {
     <div className="bg-blue-50 rounded-2xl p-4 mb-4 border border-blue-100">
       <h2 className="font-bold text-blue-700 mb-3">إضافة دواء جديد</h2>
 
-      <input
-        type="text"
-        placeholder="اسم الدواء"
-        value={name}
-        onChange={e => setName(e.target.value)}
-        className="w-full border border-gray-200 rounded-xl p-3 mb-2 text-right"
-      />
+   <input
+  type="text"
+  placeholder="اسم الدواء"
+  value={name}
+  onChange={e => setName(e.target.value)}
+  className="w-full border border-gray-200 rounded-xl p-3 mb-2 text-right text-gray-900 placeholder:text-gray-400"
+/>
 
-      <input
-        type="text"
-        placeholder="الجرعة (مثال: حبة واحدة)"
-        value={dose}
-        onChange={e => setDose(e.target.value)}
-        className="w-full border border-gray-200 rounded-xl p-3 mb-2 text-right"
-      />
+   <input
+  type="text"
+  placeholder="الجرعة (مثال: حبة واحدة)"
+  value={dose}
+  onChange={e => setDose(e.target.value)}
+  className="w-full border border-gray-200 rounded-xl p-3 mb-2 text-right text-gray-900 placeholder:text-gray-400"
+/>
+    
+<input
+  type="time"
+  value={time}
+  onChange={e => setTime(e.target.value)}
+  className="w-full border border-gray-200 rounded-xl p-3 mb-2 text-gray-900"
+/>
 
-      <input
-        type="time"
-        value={time}
-        onChange={e => setTime(e.target.value)}
-        className="w-full border border-gray-200 rounded-xl p-3 mb-2"
-      />
-
-      <div className="flex items-center gap-2 mb-3">
-        <label className="text-gray-600 text-sm">عدد الأيام:</label>
-        <input
-          type="number"
-          value={days}
-          onChange={e => setDays(Number(e.target.value))}
-          className="border border-gray-200 rounded-xl p-2 w-20 text-center"
-          min={1}
-        />
-      </div>
+   
+<div className="flex items-center gap-2 mb-3">
+  <label className="text-gray-600 text-sm">عدد الأيام:</label>
+  <input
+    type="number"
+    value={days}
+    onChange={e => setDays(Number(e.target.value))}
+    className="border border-gray-200 rounded-xl p-2 w-20 text-center text-gray-900 placeholder:text-gray-400"
+    min={1}
+  />
+</div>
 
       <button
         onClick={handleSubmit}

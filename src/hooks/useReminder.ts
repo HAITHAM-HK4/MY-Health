@@ -1,3 +1,4 @@
+import { storage } from '../lib/storage';
 import { useEffect, useState } from 'react';
 
 export type ReminderAlert = {
@@ -29,7 +30,7 @@ export function useReminder() {
 
   useEffect(() => {
     const check = () => {
-      const saved = localStorage.getItem('medicines');
+      const saved = storage.get('medicines');
       if (!saved) return;
 
       const medicines = JSON.parse(saved);

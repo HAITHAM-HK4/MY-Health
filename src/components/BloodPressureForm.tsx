@@ -1,3 +1,4 @@
+import { storage } from '../lib/storage';
 import { useState, useEffect } from 'react';
 
 type Reading = {
@@ -12,7 +13,7 @@ export default function BloodPressureForm() {
   const [readings, setReadings] = useState<Reading[]>([]);
 
   useEffect(() => {
-    const saved = localStorage.getItem('bp_readings');
+    const saved = storage.get('bp_readings');
     if (saved) setReadings(JSON.parse(saved));
   }, []);
 
@@ -25,7 +26,7 @@ export default function BloodPressureForm() {
     };
     const updated = [newReading, ...readings].slice(0, 10);
     setReadings(updated);
-    localStorage.setItem('bp_readings', JSON.stringify(updated));
+    storage.set('bp_readings', JSON.stringify(updated));
     setSystolic('');
     setDiastolic('');
   };
@@ -41,23 +42,23 @@ export default function BloodPressureForm() {
     <div className="bg-white rounded-2xl p-4 shadow-sm mb-3">
       <h2 className="font-bold text-gray-700 mb-3">🫀 ضغط الدم</h2>
 
-      <div className="flex gap-2 mb-2">
-        <input
-          type="number"
-          placeholder="الانقباضي (120)"
-          value={systolic}
-          onChange={e => setSystolic(e.target.value)}
-          className="flex-1 border border-gray-200 rounded-xl p-3 text-right"
-        />
-        <input
-          type="number"
-          placeholder="الانبساطي (80)"
-          value={diastolic}
-          onChange={e => setDiastolic(e.target.value)}
-          className="flex-1 border border-gray-200 rounded-xl p-3 text-right"
-        />
-      </div>
+   
 
+
+<input
+  type="number"
+  placeholder="الانقباضي (120)"
+  value={systolic}
+  onChange={e => setSystolic(e.target.value)}
+  className="flex-1 border border-gray-200 rounded-xl p-3 text-right text-gray-900 placeholder:text-gray-400"
+/>
+<input
+  type="number"
+  placeholder="الانبساطي (80)"
+  value={diastolic}
+  onChange={e => setDiastolic(e.target.value)}
+  className="flex-1 border border-gray-200 rounded-xl p-3 text-right text-gray-900 placeholder:text-gray-400"
+/>
       <button
         onClick={save}
         className="w-full bg-red-400 text-white py-3 rounded-xl font-bold mb-4"
@@ -73,7 +74,7 @@ export default function BloodPressureForm() {
             return (
               <div key={i} className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-gray-500 text-sm">{r.date}</span>
-                <span className="font-bold">{r.systolic}/{r.diastolic}</span>
+             <span className="font-bold text-gray-900">{r.systolic}/{r.diastolic}</span>
                 <span className={`text-sm font-bold ${status.color}`}>
                   {status.text}
                 </span>

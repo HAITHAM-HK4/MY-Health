@@ -1,3 +1,4 @@
+import { storage } from '../lib/storage';
 import { useState, useEffect } from 'react';
 
 type Reading = {
@@ -12,7 +13,7 @@ export default function SugarForm() {
   const [readings, setReadings] = useState<Reading[]>([]);
 
   useEffect(() => {
-    const saved = localStorage.getItem('sugar_readings');
+    const saved = storage.get('sugar_readings');
     if (saved) setReadings(JSON.parse(saved));
   }, []);
 
@@ -25,7 +26,7 @@ export default function SugarForm() {
     };
     const updated = [newReading, ...readings].slice(0, 10);
     setReadings(updated);
-    localStorage.setItem('sugar_readings', JSON.stringify(updated));
+    storage.set('sugar_readings', JSON.stringify(updated));
     setValue('');
   };
 
@@ -54,13 +55,13 @@ export default function SugarForm() {
           <option>صائم</option>
           <option>بعد الأكل</option>
         </select>
-        <input
-          type="number"
-          placeholder="القيمة (mg/dL)"
-          value={value}
-          onChange={e => setValue(e.target.value)}
-          className="flex-1 border border-gray-200 rounded-xl p-3 text-right"
-        />
+    <input
+  type="number"
+  placeholder="القيمة (mg/dL)"
+  value={value}
+  onChange={e => setValue(e.target.value)}
+  className="flex-1 border border-gray-200 rounded-xl p-3 text-right text-gray-900 placeholder:text-gray-400"
+/>
       </div>
 
       <button
@@ -78,7 +79,7 @@ export default function SugarForm() {
             return (
               <div key={i} className="flex justify-between items-center py-2 border-b border-gray-100">
                 <span className="text-gray-500 text-sm">{r.date}</span>
-                <span className="font-bold">{r.value} - {r.type}</span>
+         <span className="font-bold text-gray-900">{r.value} - {r.type}</span>
                 <span className={`text-sm font-bold ${status.color}`}>
                   {status.text}
                 </span>

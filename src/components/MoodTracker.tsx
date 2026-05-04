@@ -1,46 +1,45 @@
 import { useState, useEffect } from 'react';
-
-const moods = [
-  { emoji: '😄', label: 'ممتاز', value: 5 },
-  { emoji: '😊', label: 'جيد',   value: 4 },
-  { emoji: '😐', label: 'عادي',  value: 3 },
-  { emoji: '😟', label: 'متعب',  value: 2 },
-  { emoji: '😢', label: 'سيء',   value: 1 },
-];
-
-export default function MoodTracker() {
+import { useFamily } from '../context/FamilyContext';
+import { storage } from '../lib/storage';
+export default function SleepTracker() {
   const today = new Date().toDateString();
-  const key = `mood_${today}`;
-  const [selected, setSelected] = useState<number | null>(null);
-
+  const key = `sleep_${today}`;
+  const [hours, setHours] = useState(0);
+  const { currentMember, updateMember } = useFamily();
   useEffect(() => {
-    const saved = localStorage.getItem(key);
-    if (saved) setSelected(Number(saved));
+    const saved = storage.get(key);
+    if (saved) setHours(Number(saved));
   }, []);
-
-  const select = (val: number) => {
-    setSelected(val);
-    localStorage.setItem(key, String(val));
+  const update = (val: number) => {
+    const newVal = Math.min(24, Math.max(0, hours + val));
+    setHours(newVal);
+    storage.set(key, String(newVal));
+    // ← مزامنة مع بيانات العائلة
+    if (currentMember) updateMember({ sleep: newVal });
   };
-
+  const getStatus = () => {
+    if (hours === 0) return { text: 'لم تسجل بعد', color: 'text-gray-400' };
+    if (hours < 6)  return { text: 'نوم قليل جداً 😟', color: 'text-red-500' };
+    if (hours < 7)  return { text: 'نوم أقل من المثالي', color: 'text-yellow-500' };
+    if (hours <= 9) return { text: 'نوم ممتاز! 😊', color: 'text-green-500' };
+    return              { text: 'نوم كثير 😴', color: 'text-yellow-500' };
+  };
+  const status = getStatus();
   return (
     <div className="bg-white rounded-2xl p-4 shadow-sm mb-3">
-      <h2 className="font-bold text-gray-700 mb-3">😊 كيف تشعر اليوم؟</h2>
-      <div className="flex justify-around">
-        {moods.map(mood => (
-          <button
-            key={mood.value}
-            onClick={() => select(mood.value)}
-            className={`flex flex-col items-center p-2 rounded-xl transition-all ${
-              selected === mood.value
-                ? 'bg-blue-50 scale-110'
-                : 'opacity-50'
-            }`}
-          >
-            <span className="text-3xl">{mood.emoji}</span>
-            <span className="text-xs text-gray-500 mt-1">{mood.label}</span>
-          </button>
-        ))}
+      <h2 className="font-bold text-gray-700 mb-3">😴 النوم</h2>
+      <p className="text-center text-5xl font-bold text-gray-800 mb-1">{hours}</p>
+      <p className="text-center text-gray-500 mb-2">ساعات</p>
+      <p className={`text-center font-bold mb-4 ${status.color}`}>{status.text}</p>
+      <div className="flex justify-center gap-4">
+        <button
+          onClick={() => update(-1)}
+          className="bg-gray-100 text-gray-700 w-12 h-12 rounded-full text-2xl font-bold"
+        >−</button>
+        <button
+          onClick={() => update(1)}
+          className="bg-purple-500 text-white w-12 h-12 rounded-full text-2xl font-bold"
+        >+</button>
       </div>
     </div>
   );
