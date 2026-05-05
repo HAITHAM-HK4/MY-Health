@@ -60,6 +60,7 @@ function AppInner() {
   const [showSplash,     setShowSplash]     = useState(true);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showMoreMenu,   setShowMoreMenu]   = useState(false);
 
   const unreadCount = useUnreadCount(currentMember?.id ?? '');
   useWaterReminder();
@@ -69,6 +70,7 @@ function AppInner() {
     if (!user) return;
     setPage('home');
     setShowNotifPanel(false);
+    setShowMoreMenu(false);
 
     // ✅ افتراضي نهاري — dark فقط إذا حُفظ صراحةً
     const saved = storage.get(getThemeKey(user.username));
@@ -92,6 +94,11 @@ function AppInner() {
   useEffect(() => {
     if (user?.username) storage.set(getThemeKey(user.username), theme);
   }, [theme, user?.username]);
+
+  // ─── إغلاق قائمة المزيد عند تغيير الصفحة ─────────────────
+  useEffect(() => {
+    setShowMoreMenu(false);
+  }, [page]);
 
   // ─── دوال ─────────────────────────────────────────────────
   const handleSplashFinish    = useCallback(() => setShowSplash(false), []);
@@ -133,6 +140,10 @@ function AppInner() {
     }
   };
 
+  // ─── إظهار الأزرار العائمة ────────────────────────────────
+  // تختفي: عند فتح قائمة المزيد، أو في صفحة المساعد الذكي
+  const showFloatingButtons = !showMoreMenu && page !== 'ai';
+
   return (
     <div style={{ minHeight: '100vh', background: dark ? '#0f172a' : '#f0f9ff', position: 'relative' }}>
 
@@ -150,43 +161,54 @@ function AppInner() {
 
       <div className="page-enter" key={page}>{renderPage()}</div>
 
-      <Navbar currentPage={page} setCurrentPage={setPage} theme={theme} />
+      <Navbar
+        currentPage={page}
+        setCurrentPage={setPage}
+        theme={theme}
+        showMoreMenu={showMoreMenu}
+        setShowMoreMenu={setShowMoreMenu}
+      />
 
       {showNotifPanel && <NotificationCenter onClose={() => setShowNotifPanel(false)} />}
 
       {/* الأزرار العائمة */}
-      <div style={{ position: 'fixed', left: 12, bottom: 90, display: 'flex', flexDirection: 'column', gap: 10, zIndex: 400 }}>
+      {showFloatingButtons && (
+        <div style={{
+          position: 'fixed', left: 12, bottom: 90,
+          display: 'flex', flexDirection: 'column', gap: 10, zIndex: 400,
+        }}>
 
-        {/* 🔔 الإشعارات */}
-        <button
-          onClick={() => setShowNotifPanel(v => !v)}
-          aria-label="الإشعارات"
-          style={{
-            width: 44, height: 44, borderRadius: '50%',
-            background: dark ? 'rgba(30,41,59,0.95)' : 'rgba(255,255,255,0.95)',
-            border: `1.5px solid ${dark ? 'rgba(99,102,241,0.4)' : 'rgba(2,132,199,0.30)'}`,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 20, position: 'relative',
-          }}
-        >
-          🔔
-          {unreadCount > 0 && (
-            <span style={{
-              position: 'absolute', top: -4, right: -4,
-              background: '#ef4444', color: '#fff', fontSize: 10, fontWeight: 700,
-              borderRadius: '50%', width: 18, height: 18,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              border: `2px solid ${dark ? '#0f172a' : '#ffffff'}`,
-            }}>
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </button>
+          {/* 🔔 الإشعارات */}
+          <button
+            onClick={() => setShowNotifPanel(v => !v)}
+            aria-label="الإشعارات"
+            style={{
+              width: 44, height: 44, borderRadius: '50%',
+              background: dark ? 'rgba(30,41,59,0.95)' : 'rgba(255,255,255,0.95)',
+              border: `1.5px solid ${dark ? 'rgba(99,102,241,0.4)' : 'rgba(2,132,199,0.30)'}`,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 20, position: 'relative',
+            }}
+          >
+            🔔
+            {unreadCount > 0 && (
+              <span style={{
+                position: 'absolute', top: -4, right: -4,
+                background: '#ef4444', color: '#fff', fontSize: 10, fontWeight: 700,
+                borderRadius: '50%', width: 18, height: 18,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: `2px solid ${dark ? '#0f172a' : '#ffffff'}`,
+              }}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
 
-        <VoiceCommand onNavigate={handleNavigate} onThemeToggle={handleThemeToggle} />
-        <EmergencyButton />
-      </div>
+          <VoiceCommand onNavigate={handleNavigate} onThemeToggle={handleThemeToggle} />
+          <EmergencyButton />
+        </div>
+      )}
     </div>
   );
 }
@@ -206,4 +228,3 @@ export default function App() {
     <AuthProvider><AppWithFamily /></AuthProvider>
   );
 }
-
