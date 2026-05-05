@@ -1,6 +1,8 @@
 {
   "name": "medicine",
   "version": "0.1.0",
+  "build": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
+  
   
   "private": true,
   "proxy": "https://api.groq.com",
