@@ -16,14 +16,9 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// ─── مفاتيح يجب عدم مسحها أبداً ─────────────────────────────────────────────
 const PERSISTENT_PREFIXES = [
-  'all_families_db',
-  'family_session_',
-  'reminders_',
-  'app_reminders',
-  'users_db',
-  'user_data_',
+  'all_families_db', 'family_session_', 'reminders_',
+  'app_reminders', 'users_db', 'user_data_',
 ];
 
 const isPersistent = (key: string): boolean =>
@@ -76,9 +71,7 @@ const loadUserData = (username: string) => {
   } catch { /* ignore */ }
 
   Object.entries(persistent).forEach(([k, v]) => {
-    if (!localStorage.getItem(k)) {
-      localStorage.setItem(k, v);
-    }
+    if (!localStorage.getItem(k)) localStorage.setItem(k, v);
   });
 };
 
@@ -112,23 +105,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     storage.set('username', name);
   };
 
-  // ─── تسجيل الدخول عبر Supabase ───────────────────────────────────────────
+  // ─── تسجيل الدخول ────────────────────────────────────────────────────────
   const login = async (username: string, pass: string): Promise<string | null> => {
     if (!username.trim()) return 'أدخل اسم المستخدم';
     if (!pass.trim())     return 'أدخل كلمة المرور';
 
     try {
-      // ابحث عن المستخدم في Supabase
       const { data, error } = await supabase
         .from('users')
         .select('username, password, display_name')
-        .eq('username', username)
-        .single();
+        .eq('username', username.trim())
+        .maybeSingle(); // ✅ يرجع null بدل error إذا غير موجود
 
-      if (error || !data) return 'المستخدم غير موجود';
+      if (error) return 'حدث خطأ في الاتصال';
+      if (!data)  return 'المستخدم غير موجود';
       if (data.password !== pass) return 'كلمة المرور غير صحيحة';
 
-      // احفظ بيانات المستخدم الحالي قبل التبديل
       const currentUser = storage.get<User>('current_user');
       if (currentUser?.username && currentUser.username !== username) {
         saveCurrentUserData(currentUser.username);
@@ -151,7 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // ─── إنشاء حساب عبر Supabase ─────────────────────────────────────────────
+  // ─── إنشاء حساب ──────────────────────────────────────────────────────────
   const signup = async (username: string, pass: string): Promise<string | null> => {
     if (!username.trim())    return 'أدخل اسم المستخدم';
     if (username.length < 3) return 'الاسم 3 أحرف على الأقل';
@@ -160,29 +152,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       // تحقق إذا كان المستخدم موجوداً
-      const { data: existing } = await supabase
+      const { data: existing, error: checkError } = await supabase
         .from('users')
         .select('username')
-        .eq('username', username)
-        .single();
+        .eq('username', username.trim())
+        .maybeSingle(); // ✅ يرجع null بدل error إذا غير موجود
 
-      if (existing) return 'اسم المستخدم مأخوذ';
+      if (checkError) return 'حدث خطأ في الاتصال';
+      if (existing)   return 'اسم المستخدم مأخوذ';
 
-      // أنشئ المستخدم في Supabase
-      const { error } = await supabase
+      // أنشئ المستخدم
+      const { error: insertError } = await supabase
         .from('users')
-        .insert({ username, password: pass, display_name: username });
+        .insert({ username: username.trim(), password: pass, display_name: username.trim() });
 
-      if (error) return 'حدث خطأ أثناء إنشاء الحساب';
+      if (insertError) return 'حدث خطأ أثناء إنشاء الحساب';
 
-      // احفظ بيانات المستخدم الحالي
       const currentUser = storage.get<User>('current_user');
-      if (currentUser?.username) {
-        saveCurrentUserData(currentUser.username);
-      }
+      if (currentUser?.username) saveCurrentUserData(currentUser.username);
 
       clearCurrentUserData();
-
       storage.set(displayNameKey(username), username);
       storage.set('username', username);
 
@@ -200,12 +189,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ─── تسجيل الخروج ────────────────────────────────────────────────────────
   const logout = () => {
     clearStorageForUser();
-
     const currentUser = storage.get<User>('current_user');
-    if (currentUser?.username) {
-      saveCurrentUserData(currentUser.username);
-    }
-
+    if (currentUser?.username) saveCurrentUserData(currentUser.username);
     clearCurrentUserData();
     storage.removeLocalOnly('current_user');
     setUser(null);
