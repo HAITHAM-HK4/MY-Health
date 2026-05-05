@@ -11,6 +11,8 @@ type Props = {
   currentPage: Page;
   setCurrentPage: (page: Page) => void;
   theme?: any;
+  showMoreMenu?: boolean;
+  setShowMoreMenu?: (val: boolean) => void;
 };
 
 /* ── رسالة الانضمام الرائعة ── */
@@ -172,13 +174,31 @@ function JoinFamilyPrompt({ onClose, onJoin }: { onClose: () => void; onJoin: ()
 /* ─────────────────────────────────────────────────────────
    Navbar
 ───────────────────────────────────────────────────────── */
-export default function Navbar({ currentPage, setCurrentPage, theme }: Props) {
+export default function Navbar({
+  currentPage,
+  setCurrentPage,
+  theme,
+  showMoreMenu,
+  setShowMoreMenu,
+}: Props) {
   const { family } = useFamily();
   const [drawerOpen, setDrawerOpen]         = useState(false);
   const [showJoinPrompt, setShowJoinPrompt] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
 
   const isFamilyMember = !!family;
+
+  /* مزامنة drawerOpen مع showMoreMenu من App.tsx */
+  useEffect(() => {
+    if (showMoreMenu !== undefined) {
+      setDrawerOpen(showMoreMenu);
+    }
+  }, [showMoreMenu]);
+
+  const updateDrawer = (val: boolean) => {
+    setDrawerOpen(val);
+    if (setShowMoreMenu) setShowMoreMenu(val);
+  };
 
   /* العنصر مقفول إذا كان "family" والمستخدم غير منضم */
   const isItemLocked = (id: string) => id === 'family' && !isFamilyMember;
@@ -188,7 +208,7 @@ export default function Navbar({ currentPage, setCurrentPage, theme }: Props) {
     if (!drawerOpen) return;
     const handler = (e: TouchEvent | MouseEvent) => {
       if (drawerRef.current && !drawerRef.current.contains(e.target as Node)) {
-        setDrawerOpen(false);
+        updateDrawer(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -201,14 +221,15 @@ export default function Navbar({ currentPage, setCurrentPage, theme }: Props) {
 
   /* نقرة على زر رئيسي في الشريط السفلي */
   const handleMain = (id: string) => {
-    if (id === 'more') { setDrawerOpen((o) => !o); return; }
+    if (id === 'more') { updateDrawer(!drawerOpen); return; }
     if (isItemLocked(id)) { setShowJoinPrompt(true); return; }
+    updateDrawer(false);
     setCurrentPage(id as Page);
   };
 
   /* نقرة على عنصر في الـ Drawer */
   const handleDrawer = (id: string) => {
-    setDrawerOpen(false);
+    updateDrawer(false);
     if (isItemLocked(id)) {
       setTimeout(() => setShowJoinPrompt(true), 250);
       return;
@@ -246,7 +267,7 @@ export default function Navbar({ currentPage, setCurrentPage, theme }: Props) {
       {/* ── Overlay الـ Drawer ── */}
       <div
         className={`more-overlay${drawerOpen ? ' open' : ''}`}
-        onClick={() => setDrawerOpen(false)}
+        onClick={() => updateDrawer(false)}
       />
 
       {/* ── Drawer ── */}
@@ -271,7 +292,6 @@ export default function Navbar({ currentPage, setCurrentPage, theme }: Props) {
                 <span className="d-icon">{item.icon}</span>
                 <span className="d-label">{item.label}</span>
 
-                {/* نقطة وهّاجة للعنصر غير المنضم */}
                 {locked && (
                   <span style={{
                     position: 'absolute', top: 5, left: 5,
@@ -300,7 +320,6 @@ export default function Navbar({ currentPage, setCurrentPage, theme }: Props) {
               onClick={() => handleMain(item.id)}
               style={{ position: 'relative' }}
             >
-              {/* نقطة وهّاجة فوق زر العائلة إذا غير منضم */}
               {locked && (
                 <span style={{
                   position: 'absolute', top: 4, right: 4,
