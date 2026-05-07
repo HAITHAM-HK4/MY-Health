@@ -5,23 +5,28 @@ import { useAuth } from '../context/AuthContext';
 type Props = { theme?: 'dark' | 'light' };
 
 export default function AuthScreen({ theme }: Props) {
-  const dark = theme === 'dark' || true; // افتراضي ليلي للشاشة الأولى
+  const dark = theme === 'dark' || true;
   const { login, signup } = useAuth();
-  
-  const [isLogin, setIsLogin] = useState(true);
+
+  const [isLogin, setIsLogin]   = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError]       = useState('');
+  const [loading, setLoading]   = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setError('');
-    const result = isLogin ? login(username, password) : signup(username, password);
+    setLoading(true);
+    const result = isLogin
+      ? await login(username, password)
+      : await signup(username, password);
+    setLoading(false);
     if (result) setError(result);
   };
 
-  const bg = dark ? '#050510' : '#f5f3ff';
-  const cardBg = dark ? 'rgba(255,255,255,0.04)' : '#ffffff';
-  const inputBg = dark ? 'rgba(255,255,255,0.06)' : '#f8fafc';
+  const bg       = dark ? '#050510' : '#f5f3ff';
+  const cardBg   = dark ? 'rgba(255,255,255,0.04)' : '#ffffff';
+  const inputBg  = dark ? 'rgba(255,255,255,0.06)' : '#f8fafc';
   const inputBord = dark ? 'rgba(255,255,255,0.1)' : '#e2e8f0';
 
   return (
@@ -30,7 +35,6 @@ export default function AuthScreen({ theme }: Props) {
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       padding: '20px', fontFamily: "'Cairo', sans-serif",
     }}>
-      {/* تأثيرات بصرية */}
       <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '300px', height: '300px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%)', pointerEvents: 'none' }} />
       <div style={{ position: 'absolute', bottom: '-10%', left: '-10%', width: '300px', height: '300px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(34,211,238,0.15), transparent 70%)', pointerEvents: 'none' }} />
 
@@ -61,30 +65,49 @@ export default function AuthScreen({ theme }: Props) {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
           <input
-            type="text" placeholder="اسم المستخدم" value={username} onChange={e => setUsername(e.target.value)}
+            type="text"
+            placeholder="اسم المستخدم"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSubmit()}
             style={{ width: '100%', padding: '14px 16px', background: inputBg, border: `1px solid ${inputBord}`, borderRadius: '14px', color: 'inherit', fontSize: '15px', outline: 'none', fontFamily: 'inherit' }}
           />
           <input
-            type="password" placeholder="كلمة المرور" value={password} onChange={e => setPassword(e.target.value)}
+            type="password"
+            placeholder="كلمة المرور"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSubmit()}
             style={{ width: '100%', padding: '14px 16px', background: inputBg, border: `1px solid ${inputBord}`, borderRadius: '14px', color: 'inherit', fontSize: '15px', outline: 'none', fontFamily: 'inherit' }}
           />
         </div>
 
-        <button onClick={handleSubmit} style={{
-          width: '100%', padding: '16px', borderRadius: '16px', border: 'none',
-          background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-          color: 'white', fontWeight: 900, fontSize: '16px', cursor: 'pointer',
-          fontFamily: "'Cairo', sans-serif", boxShadow: '0 8px 24px rgba(99,102,241,0.4)',
-          marginBottom: '20px', transition: 'transform 0.2s'
-        }}>
-          {isLogin ? 'تسجيل الدخول' : 'إنشاء حساب جديد'}
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          style={{
+            width: '100%', padding: '16px', borderRadius: '16px', border: 'none',
+            background: loading
+              ? 'rgba(99,102,241,0.5)'
+              : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            color: 'white', fontWeight: 900, fontSize: '16px', cursor: loading ? 'not-allowed' : 'pointer',
+            fontFamily: "'Cairo', sans-serif", boxShadow: '0 8px 24px rgba(99,102,241,0.4)',
+            marginBottom: '20px', transition: 'all 0.2s',
+          }}
+        >
+          {loading
+            ? '⏳ جاري التحقق...'
+            : isLogin ? 'تسجيل الدخول' : 'إنشاء حساب جديد'}
         </button>
 
         <div style={{ textAlign: 'center' }}>
-          <button onClick={() => { setIsLogin(!isLogin); setError(''); }} style={{
-            background: 'none', border: 'none', color: dark ? '#a5b4fc' : '#6366f1',
-            fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit'
-          }}>
+          <button
+            onClick={() => { setIsLogin(!isLogin); setError(''); }}
+            style={{
+              background: 'none', border: 'none', color: dark ? '#a5b4fc' : '#6366f1',
+              fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit'
+            }}
+          >
             {isLogin ? 'ليس لديك حساب؟ انضم إلينا' : 'لديك حساب بالفعل؟ سجل دخولك'}
           </button>
         </div>
